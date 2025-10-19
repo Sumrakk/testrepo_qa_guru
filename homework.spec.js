@@ -16,7 +16,7 @@ test.describe('Авторизация',() => {
         await registerPage.login();
     });
 
-    test.only ('Создание поста', async({
+    test ('Создание поста', async({
         page,
     }) => {
         const post = {
