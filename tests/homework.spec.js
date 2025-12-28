@@ -3,7 +3,7 @@ import { test, expect } from "@playwright/test";
 import { MainPage, RegisterPage, ProfilePage, EditorPage, ArticlePage} from "./pages/index";
 import { faker } from "@faker-js/faker";
 
-const URL = 'https://realworld.qa.guru';
+const URL = 'https://realworld.qa.guru/#/';
 
 test.describe('Авторизация',() => {
     test.beforeEach(async({page}) => {
@@ -20,7 +20,7 @@ test.describe('Авторизация',() => {
         page,
     }) => {
         const post = {
-            title:faker.word.words(1),
+            title:faker.word.words(2),
             description:faker.internet.emoji(),
             text:faker.word.words(15),
             tags:faker.word.words(1)
@@ -31,7 +31,6 @@ test.describe('Авторизация',() => {
 
         await mainPage.gotoCreatePost();
         await editorPage.createPost(post);
-        await page.waitForURL(URL + '/#/article/' + post.title);
         await expect(page.getByRole('heading')).toContainText(post.title);
         await expect(page.getByRole('paragraph')).toContainText(post.text);
     });
@@ -71,8 +70,7 @@ test.describe('Авторизация',() => {
         await expect(page.getByRole('heading')).toContainText(post.title);
         await expect(page.getByRole('main')).toContainText(post.text);
     });
-/* Хотел сначала сделать тест на удаление поста, но столкнулся с трудностью со всплывающем окном, как правильно реализовать метод
-   позволяющий работать с такими окнами подтверждения в браузере?
+
     test ('Удаление поста', async({
         page,
     }) => {
@@ -82,43 +80,39 @@ test.describe('Авторизация',() => {
 
         await mainPage.gotoProfile();
         await mainPage.gotoFirstPost();
-        await articlePage.deletePost();
         page.on('dialog', dialog => {
         console.log('Диалог:', dialog.message());
         dialog.accept();
         });
-        
-
+        await articlePage.deletePost();
+        await expect(page).toHaveURL(URL);
     });
-*/
-    test ('Переход по ссылке на Source Code', async({
+});
+
+ test ('Редактирование информации пользователя', async({
         page,
     }) => {
-              
         const mainPage = new MainPage(page);
-        const profilePage = new ProfilePage(page);
-
-        await mainPage.gotoSourceCode();
-        await page.waitForURL('https://github.com/TonyMckes/conduit-realworld-example-app');
+        const registerPage = new RegisterPage(page);
         
-
-    });
-
-    test ('Редактирование информации пользователя', async({
-        page,
-    }) => {
         const user = { 
+            name:faker.internet.displayName(),
+            email:faker.internet.email(),
+            password: faker.internet.password()
+        };
+        const userEdit = { 
             photoURL:faker.image.avatar(),
             name:faker.internet.displayName(),
             bio:faker.word.words(15),
+            password: faker.internet.password()
         };
-        
-
-        const mainPage = new MainPage(page);
-        const profilePage = new ProfilePage(page);
-
+        // Регистрация нового пользователя
+        await page.goto(URL);
+        await mainPage.gotoRegister();
+        await registerPage.register(user);
+        // Переход и редактирование пользовательской информации
         await mainPage.gotoProfile();
         await mainPage.gotoProfileSettings();
-        await profilePage.update(user)
+        await registerPage.updateProfile(userEdit);
+        await expect(page.getByText(userEdit.name)).toBeVisible();
     });
-});
